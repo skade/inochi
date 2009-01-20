@@ -224,12 +224,13 @@ class << self
   ##
   # Provides Rake tasks for packaging, publishing, and announcing your project.
   #
-  # * An AUTHORS constant (which has the form "[[name, info]]"
-  #   where "name" is the name of a copyright holder and "info" is
-  #   their contact information) is added to the project module.
+  # * If not present, an AUTHORS constant (which has the form 
+  #   "[[name, info]]" where "name" is the name of a copyright holder 
+  #   and "info" is their contact information) is added to the project 
+  #   module.
   #
   #   This information is extracted from copyright notices in
-  #   the project license file.  NOTE that the first copyright
+  #   the project license file. In this case, NOTE that the first copyright
   #   notice must correspond to the primary project maintainer.
   #
   #   Copyright notices must be in the following form:
@@ -317,15 +318,18 @@ class << self
       options[:logins_file] ||= File.join(ENV['HOME'], '.config', 'inochi', 'logins.yaml')
       options[:upload_delete] ||= false
       options[:upload_options] ||= []
+      
+      authors = project_module.const_get(:AUTHORS) rescue nil
+      unless authors
+        # add AUTHORS constant to the project module
+        license = File.read(options[:license_file])
 
-    # add AUTHORS constant to the project module
-      license = File.read(options[:license_file])
+        copyright_holders =
+          license.scan(/Copyright.*?\d+\s+(.*)/).flatten.
+          map {|s| (s =~ /\s*<(.*?)>/) ? [$`, $1] : [s, ''] }
 
-      copyright_holders =
-        license.scan(/Copyright.*?\d+\s+(.*)/).flatten.
-        map {|s| (s =~ /\s*<(.*?)>/) ? [$`, $1] : [s, ''] }
-
-      project_module.const_set :AUTHORS, copyright_holders
+        project_module.const_set :AUTHORS, copyright_holders
+      end
 
     require 'rake/clean'
 
